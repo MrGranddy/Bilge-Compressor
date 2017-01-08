@@ -15,4 +15,4 @@ How to use?
   For now there is no user interface to use but you can use my functions as you want.
   
 Details:
-|  **`Bilge is written with Python 3.5.2'**  |
+|  **`Bilge is written with Python 3.5.2`**  |
