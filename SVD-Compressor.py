@@ -1,28 +1,53 @@
-from scipy.misc.pilutil import imread, imsave
+from scipy.misc.pilutil import imread, imsave, copy
 import numpy as np
 
 np.seterr(all='warn')
 
-
 def shrink(image, vertical, horizontal):
 
-    height = len(image)
-    width = len(image[0])
+""" This function shrinks given image by the ratio given horizontally
+    and vertically.
 
-    n_height = height // vertical
-    n_width = width // horizontal
+    Example: shrink(img, 5, 3) will take 5 x 3 matrices from the left top
+             corner to the right bottom corner and set their average value
+             to a new image with the same order.
 
-    temp = np.zeros([n_height, n_width, 3], dtype='uint64')
+    Args: 
+         image (numpy.ndarray): The image to be shrinked.
+         vertical (int): Vertical shrinking ratio.
+         horizontal (int): Horizontal shrinking ratio.
 
-    row = 0
-    while row < n_height - 1:
-        col = 0
-        while col < n_width - 1:
-            temp[row][col] = image[row * vertical][col * horizontal]
-            col += 1
-        row += 1
-    return temp
-# Takes 3 dimensional array as input
+    Returns:
+         temp (numpy.ndarray): The shrinked image."""
+
+  height = len(image)
+  width = len(imagee[0])
+
+  n_height = height // vertical
+  n_width = width // horizontal
+
+  img_dim = len(image.shape)
+
+  if img_dim == 2:
+    temp = np.zeros([n_height, n_width], dtype='uint8')
+    for row in range(height - (height % vertical)):
+      for col in range(width - (width % horizontal)):
+      	temp[row // vertical][col // horizontal] += image[row][col]
+      	if not (row + 1) % vertical and not col % horizontal:
+      	  temp[(row + 1) // vertical][col // horizontal] /= horizontal * vertical
+          
+  elif img_dim == 3:
+  	temp = np.zeros([n_height, n_width, 4], dtype='uint8')
+    for row in range(height - (height % vertical)):
+      for col in range(width - (width % horizontal)):
+        for clr in range(4):
+      	  temp[row // vertical][col // horizontal][clr] += image[row][col][clr]
+      	if not (row + 1) % vertical and not col % horizontal:
+          for clr in range(4):
+      	    temp[(row + 1) // vertical][col // horizontal][clr] /= horizontal * vertical
+
+  return temp
+
 
 
 def black_white(image):
@@ -84,12 +109,11 @@ def compressor(image, factor):
     return compressed
 # Compresses only inputs with 2 dimension
 
-i = 1
-while i < 64:
-    img = imread(str(i) + '.jpg')
-    cmp = compressor(shrink(img, 2, 2), 250)
-    imsave(str(i) + '_output.jpg', cmp)
-    print('Compressed ' + str(i) + '...')
-    i += 1
+def main():
+  img = imread('test.jpg')
+  imsave('test_output.jpg', shrink(img, 4, 4))
+
+if __name__ == '__main__':
+  main()
 
 
