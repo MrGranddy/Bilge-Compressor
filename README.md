@@ -8,10 +8,11 @@ basically compress your images by the parameters you
 want.
 
 Requirements:
+-------------------
   * Bilge uses scipy.misc.pilutil and numpy modules, make sure you have them.
   
 How to use?
-  
+-------------------  
   For now there is no user interface to use but you can use my functions as you want.
   
 Details:
