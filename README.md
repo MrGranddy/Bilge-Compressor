@@ -9,7 +9,7 @@ want.
 
 Requirements:
 -------------------
-  * Bilge uses scipy.misc.pilutil and numpy modules, make sure you have them.
+  Bilge uses scipy.misc.pilutil and numpy modules, make sure you have them.
   
 How to use?
 -------------------  
