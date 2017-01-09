@@ -1,4 +1,17 @@
+# Images #
 *.jpg
+*.png
+
+# Exclude to Show Results #
+!test.jpg
+!test_output.jpg
+
+# Documents #
 *.numbers
+
+# Test Folders #
 *_input
 *_output
+
+
+!
