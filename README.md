@@ -13,7 +13,7 @@ Requirements:
   
 How to use?
 -------------------  
-  For now there is no user interface to use but you can use my functions as you want.
+  For now there is no user interface to use but you can use the functions as you want.
   
 Details:
 -------------------
