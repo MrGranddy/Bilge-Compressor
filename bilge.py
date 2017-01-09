@@ -1,121 +1,162 @@
 from scipy.misc.pilutil import imread, imsave
-import numpy as np
+from numpy import zeros, mean, dot, diag, transpose, array, dstack, seterr
+from numpy.linalg import svd
 from sys import argv
 
-np.seterr(all='warn')
+seterr(all='warn')
 
-def shrink(image, ratio):
 
-  """ This function shrinks given image by the ratio given horizontally
-      and vertically.
+def shrink_by_ratio(image, vertical, horizontal):
+  """ Description:
+            This function shrinks given image by the ratio given
+            horizontally and vertically.
 
-      Example: shrink(img, 4) will take 4 x 4 matrices from the left top
-               corner to the right bottom corner and set the average value
-               of the diagonal to the new image with the same order.
+      Example:
+            shrink_by_ratio(img, 4, 3) will take 4 x 3 matrices from the left
+            top corner to the right bottom corner and set the average of the
+            values in that matrix as pixels to the new image with the same
+            order.
 
-      Args: 
-           image (numpy.ndarray): The image to be shrinked.
-           ratio (int): The ratio of shrinkage vertically and horizontally.
+      Args:
+            image (numpy.ndarray): The image to be shrinked.
+
+            vertical (int): The ratio of shrinkage vertically.
+
+            horizontal (int): The ratio of shrinkage horizontally.
 
       Returns:
-           temp (numpy.ndarray): The shrinked image. 
+            temp (numpy.ndarray): The shrinked image. 
   """
 
   height = len(image)
   width = len(image[0])
 
-  n_height = height // ratio
-  n_width = width // ratio
+  n_height = height // vertical
+  n_width = width // horizontal
 
   img_dim = len(image.shape)
 
   if img_dim == 2:
-    temp = np.zeros([n_height, n_width], dtype='uint8')
+    temp = zeros([n_height, n_width], dtype='uint8')
     for row in range(n_height):
       for col in range(n_width):
-        temp[row][col] = mean(image[(row * ratio):(row * ratio + ratio),
-        (col * ratio):(col * ratio + ratio)])
+        temp[row][col] = mean(image[(row * vertical):(row * vertical + vertical),
+        (col * horizontal):(col * horizontal + horizontal)])# grayscale
           
   elif img_dim == 3:
-    temp = np.zeros([n_height, n_width, 3], dtype='uint8')
+    temp = zeros([n_height, n_width, 3], dtype='uint8')
     for row in range(n_height):
       for col in range(n_width):
 
-        temp[row][col][0] = np.mean(image[(row * ratio):(row * ratio + ratio),
-        (col * ratio):(col * ratio + ratio)][:,:,0])
+        temp[row][col][0] = mean(image[(row * vertical):(row * vertical + vertical),
+        (col * horizontal):(col * horizontal + horizontal)][:,:,0])# Red channel
 
-        temp[row][col][1] = np.mean(image[(row * ratio):(row * ratio + ratio),
-        (col * ratio):(col * ratio + ratio)][:,:,1])
+        temp[row][col][1] = mean(image[(row * vertical):(row * vertical + vertical),
+        (col * horizontal):(col * horizontal + horizontal)][:,:,1])# Green channel
 
-        temp[row][col][2] = np.mean(image[(row * ratio):(row * ratio + ratio),
-        (col * ratio):(col * ratio + ratio)][:,:,2])
+        temp[row][col][2] = mean(image[(row * vertical):(row * vertical + vertical),
+        (col * horizontal):(col * horizontal + horizontal)][:,:,2])# Blue channel
 
   return temp
 
 
+def grayscale(image):
+    """ Description:
+            Converts the image to a grayscaled version.
 
-def black_white(image):
+        Args:
+            image (numpy.ndarray): The image to be grayscaled. (RGB)
+
+        Returns:
+            temp (numpy.ndraray): grayscaled image.
+
+            False: If the operation is not successful
+    """
 
     height = len(image)
     width = len(image[0])
 
-    temp = np.zeros([height, width], dtype = 'uint64')
+    img_dim = len(image.shape)
 
-    row = 0
-    while row < height:
-        col = 0
-        while col < width:
-            value = 0
-            value += image[row][col][0]
-            value += image[row][col][1]
-            value += image[row][col][2]
+    if img_dim is not 2:
+      temp = zeros([height, width], dtype = 'uint64')
+    else:
+      print("Operation wasn't successful, input is already monocolored.")
+      return False
 
-            temp[row][col] = value / 3
+    for row in range(height):
+      for col in range(width):
+        temp[row][col] = mean(image[row][col])
 
-            col += 1
-        row += 1
     return temp
-# Returns a 2 dimensional output
 
 
-def compressor(image, factor):
+def SVD_compressor(image, factor_perc):
+    """ Description:
+            This function uses singular value decompositon to compress images.
 
-    image1 = black_white(image)
+        Args:
+            image (numpy.ndarray): The image to be compressed.
 
-    u, s, v = np.linalg.svd(image1, full_matrices=1)
+            factor_perc (float / int): In singular value decompositon the matrix
+            is splitted into 3 matrices U, S and V. U is M x K, S is K x K and
+            V is K x N. This argument is used for shrinking K by this percentage.
 
-    sigma = np.zeros([factor], dtype='float64')
+        Returns:
+            temp (numpy.ndraray): grayscaled image.
+    """
+    height = len(image)
+    width = len(image[0])
+    
+    img_dim = len(image.shape)
 
-    i = 0
-    while i < factor:
-        sigma[i] = s[i]
-        i += 1
+    if img_dim is 2:
+      U, S, V = svd(image, full_matrices=True)
 
-    u = np.transpose(u)
-    reducedU = np.zeros([factor, len(u[0])], dtype='float64')
+      if factor_perc is 100:
+        return dot(U, dot(diag(S), V))
 
-    i = 0
-    while i < factor:
-        reducedU[i] = u[i]
-        i += 1
+      else:
+        factored_S_len = len(S) * float(factor_perc) // 100
 
-    reducedU = np.transpose(reducedU)
+        U = transpose(transpose(U)[0:factored_S_len])
+        S = S[0:factored_S_len]
+        V = V[0:factored_S_len]
 
-    reducedV = np.zeros([factor, len(v[0])], dtype='float64')
+        return dot(U, dot(diag(S), V))
 
-    i = 0
-    while i < factor:
-        reducedV[i] = v[i]
-        i += 1
+    elif img_dim is 3:
+      U_red, S_red, V_red = svd(image[:,:,0], full_matrices=True)
+      U_green, S_green, V_green = svd(image[:,:,1], full_matrices=True)
+      U_blue, S_blue, V_blue = svd(image[:,:,2], full_matrices=True)
 
-    compressed = np.dot(reducedU, np.dot(np.diag(sigma), reducedV))
+      if factor_perc is 100:
+        return dstack((dot(U_red, dot(diag(S_red), V_red)),
+                dot(U_green, dot(diag(S_green), V_green)),
+                dot(U_blue, dot(diag(S_blue), V_blue))))
+      else:
+        factored_S_len = len(S_red) * float(factor_perc) // 100
 
-    return compressed
-# Compresses only inputs with 2 dimension
+        U_red = transpose(transpose(U_red)[0:factored_S_len])
+        S_red = S_red[0:factored_S_len]
+        V_red = V_red[0:factored_S_len]
+
+        U_green = transpose(transpose(U_green)[0:factored_S_len])
+        S_green = S_green[0:factored_S_len]
+        V_green = V_green[0:factored_S_len]
+
+        U_blue = transpose(transpose(U_blue)[0:factored_S_len])
+        S_blue = S_blue[0:factored_S_len]
+        V_blue = V_blue[0:factored_S_len]
+
+        return dstack((dot(U_red, dot(diag(S_red), V_red)),
+                dot(U_green, dot(diag(S_green), V_green)),
+                dot(U_blue, dot(diag(S_blue), V_blue))))
+
 
 def main():
   img = imread('test.jpg')
-  imsave('test_output.jpg', shrink(img, int(argv[1])))
+  imsave('test_output_SVD.jpg', SVD_compressor(img, argv[1]))
 
 if __name__ == '__main__':
   main()
