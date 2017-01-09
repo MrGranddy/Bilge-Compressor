@@ -1,50 +1,54 @@
-from scipy.misc.pilutil import imread, imsave, copy
+from scipy.misc.pilutil import imread, imsave
 import numpy as np
+from sys import argv
 
 np.seterr(all='warn')
 
-def shrink(image, vertical, horizontal):
+def shrink(image, ratio):
 
-""" This function shrinks given image by the ratio given horizontally
-    and vertically.
+  """ This function shrinks given image by the ratio given horizontally
+      and vertically.
 
-    Example: shrink(img, 5, 3) will take 5 x 3 matrices from the left top
-             corner to the right bottom corner and set their average value
-             to a new image with the same order.
+      Example: shrink(img, 4) will take 4 x 4 matrices from the left top
+               corner to the right bottom corner and set the average value
+               of the diagonal to the new image with the same order.
 
-    Args: 
-         image (numpy.ndarray): The image to be shrinked.
-         vertical (int): Vertical shrinking ratio.
-         horizontal (int): Horizontal shrinking ratio.
+      Args: 
+           image (numpy.ndarray): The image to be shrinked.
+           ratio (int): The ratio of shrinkage vertically and horizontally.
 
-    Returns:
-         temp (numpy.ndarray): The shrinked image."""
+      Returns:
+           temp (numpy.ndarray): The shrinked image. 
+  """
 
   height = len(image)
-  width = len(imagee[0])
+  width = len(image[0])
 
-  n_height = height // vertical
-  n_width = width // horizontal
+  n_height = height // ratio
+  n_width = width // ratio
 
   img_dim = len(image.shape)
 
   if img_dim == 2:
     temp = np.zeros([n_height, n_width], dtype='uint8')
-    for row in range(height - (height % vertical)):
-      for col in range(width - (width % horizontal)):
-      	temp[row // vertical][col // horizontal] += image[row][col]
-      	if not (row + 1) % vertical and not col % horizontal:
-      	  temp[(row + 1) // vertical][col // horizontal] /= horizontal * vertical
+    for row in range(n_height):
+      for col in range(n_width):
+        temp[row][col] = mean(image[(row * ratio):(row * ratio + ratio),
+        (col * ratio):(col * ratio + ratio)])
           
   elif img_dim == 3:
-  	temp = np.zeros([n_height, n_width, 4], dtype='uint8')
-    for row in range(height - (height % vertical)):
-      for col in range(width - (width % horizontal)):
-        for clr in range(4):
-      	  temp[row // vertical][col // horizontal][clr] += image[row][col][clr]
-      	if not (row + 1) % vertical and not col % horizontal:
-          for clr in range(4):
-      	    temp[(row + 1) // vertical][col // horizontal][clr] /= horizontal * vertical
+    temp = np.zeros([n_height, n_width, 3], dtype='uint8')
+    for row in range(n_height):
+      for col in range(n_width):
+
+        temp[row][col][0] = np.mean(image[(row * ratio):(row * ratio + ratio),
+        (col * ratio):(col * ratio + ratio)][:,:,0])
+
+        temp[row][col][1] = np.mean(image[(row * ratio):(row * ratio + ratio),
+        (col * ratio):(col * ratio + ratio)][:,:,1])
+
+        temp[row][col][2] = np.mean(image[(row * ratio):(row * ratio + ratio),
+        (col * ratio):(col * ratio + ratio)][:,:,2])
 
   return temp
 
@@ -111,7 +115,7 @@ def compressor(image, factor):
 
 def main():
   img = imread('test.jpg')
-  imsave('test_output.jpg', shrink(img, 4, 4))
+  imsave('test_output.jpg', shrink(img, int(argv[1])))
 
 if __name__ == '__main__':
   main()
