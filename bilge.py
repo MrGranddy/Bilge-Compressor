@@ -1,5 +1,5 @@
 from scipy.misc.pilutil import imread, imsave
-from numpy import zeros, mean, dot, diag, transpose, array, dstack, seterr
+from numpy import zeros, mean, dot, diag, transpose, array, dstack, seterr, rot90
 from numpy.linalg import svd
 from sys import argv
 
@@ -135,28 +135,77 @@ def SVD_compressor(image, factor_perc):
                 dot(U_green, dot(diag(S_green), V_green)),
                 dot(U_blue, dot(diag(S_blue), V_blue))))
       else:
-        factored_S_len = len(S_red) * float(factor_perc) // 100
+        factored_S_len = len(S_red) * factor_perc // 100
 
         U_red = transpose(transpose(U_red)[0:factored_S_len])
         S_red = S_red[0:factored_S_len]
         V_red = V_red[0:factored_S_len]
+        print("Red")
 
         U_green = transpose(transpose(U_green)[0:factored_S_len])
         S_green = S_green[0:factored_S_len]
         V_green = V_green[0:factored_S_len]
+        print("Green")
 
         U_blue = transpose(transpose(U_blue)[0:factored_S_len])
         S_blue = S_blue[0:factored_S_len]
         V_blue = V_blue[0:factored_S_len]
+        print("Blue")
 
         return dstack((dot(U_red, dot(diag(S_red), V_red)),
                 dot(U_green, dot(diag(S_green), V_green)),
                 dot(U_blue, dot(diag(S_blue), V_blue))))
 
+def shrink_by_elimination(image, vertical, horizontal):
+  """ Description:
+            This function shrinks images by deleting rows and columns.
+
+        Args:
+            image (numpy.ndarray): The image to be compressed.
+
+            vertical (int): Vertical shrink ratio.
+
+            horizontal (int): Horizontal shrink ratio.
+
+        Returns:
+            temp (numpy.ndraray): Shrinked image.
+  """
+  height = len(image)
+  width = len(image[0])
+  new_height = height // vertical
+  new_width = width // horizontal
+  img_dim = len(image.shape)
+  temp = zeros([0], dtype='uint8')
+
+  if img_dim is 3:
+    temp = zeros([new_height, new_width, 3], dtype='uint8')
+  elif img_dim is 2:
+    temp = zeros([new_height, new_width], dtype='uint8')
+
+  for col in range(new_height):
+    for row in range(new_width):
+  	  temp[col][row] = image[col * vertical][row * horizontal]
+  return temp
+
+def self_dot_transpose(image):
+  red = dot(image[0], transpose(image[0]))
+  green = dot(image[1], transpose(image[1]))
+  blue = dot(image[2], transpose(image[2]))
+  return dstack((red, green, blue))
+
+
 
 def main():
-  img = imread('test.jpg')
-  imsave('test_output_SVD.jpg', SVD_compressor(img, argv[1]))
+  for i in range(1, 23):
+    file_name = str(i)
+    img = imread('../ayrik_notlari/' + file_name + ".jpg")
+    new_img = shrink_by_elimination(img, 2, 2)
+    height = len(new_img)
+    width = len(new_img[0])
+    if height < width:
+  	  new_img = rot90(new_img, k=3)
+    imsave('../ayrik_notlari/' + file_name + '_out.jpg', new_img)
+    print('Image ' + str(i) + ' is saved...')
 
 if __name__ == '__main__':
   main()
